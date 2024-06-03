@@ -80,7 +80,7 @@ class Searches:
 
             if points <= pointsCounter:
                 attempt += 1
-                if attempt == 2:
+                if attempt == 3:
                     logging.warning(
                         "[BING] Possible blockage. Refreshing the page."
                     )
@@ -102,7 +102,7 @@ class Searches:
                 searchbar.clear()
                 searchbar.send_keys(word)
                 searchbar.submit()
-                time.sleep(Utils.randomSeconds(100, 180))
+                time.sleep(Utils.randomSeconds(30, 75))
 
                 # Scroll down after the search (adjust the number of scrolls as needed)
                 for _ in range(3):  # Scroll down 3 times
@@ -110,7 +110,7 @@ class Searches:
                         "window.scrollTo(0, document.body.scrollHeight);"
                     )
                     time.sleep(
-                        Utils.randomSeconds(7, 10)
+                        Utils.randomSeconds(3, 8)
                     )  # Random wait between scrolls
 
                 return self.browser.utils.getBingAccountPoints()
@@ -126,6 +126,6 @@ class Searches:
                     return self.browser.utils.getBingAccountPoints()
                 self.browser.utils.tryDismissAllMessages()
                 logging.error("[BING] " + "Timeout, retrying in 5~ seconds...")
-                time.sleep(Utils.randomSeconds(7, 15))
+                time.sleep(Utils.randomSeconds(5, 15))
                 i += 1
                 continue

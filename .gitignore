@@ -183,3 +183,5 @@ sessions
 logs
 runbot.bat
 .DS_Store
+accounts.json.sample
+config.yaml
