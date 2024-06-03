@@ -265,10 +265,10 @@ def executeBot(currentAccount, args: argparse.Namespace):
             mobileBrowser.closeBrowser()
 
     logging.info(
-        f"[POINTS] You have earned {utils.formatNumber(accountPointsCounter - startingPoints)} points today !"
+        f"[POINTS] You have earned {utils.formatNumber(accountPointsCounter - startingPoints)} points today!"
     )
     logging.info(
-        f"[POINTS] You are now at {utils.formatNumber(accountPointsCounter)} points !"
+        f"[POINTS] You are now at {utils.formatNumber(accountPointsCounter)} points!"
     )
     goalNotifier = ""
     if goalPoints > 0:
