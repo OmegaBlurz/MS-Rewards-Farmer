@@ -1,6 +1,7 @@
 import contextlib
 import logging
 import random
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -170,6 +171,10 @@ class Browser:
         currentPath = Path(__file__)
         parent = currentPath.parent.parent
         sessionsDir = parent / "sessions"
+        
+        # Check if the sessions directory exists and delete it
+        if sessionsDir.exists():
+            shutil.rmtree(sessionsDir)
 
         # Concatenate username and browser type for a plain text session ID
         sessionid = f"{self.username}"
