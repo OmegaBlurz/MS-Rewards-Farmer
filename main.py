@@ -281,7 +281,7 @@ def executeBot(currentAccount, args: argparse.Namespace):
         "Daily Points Update",
         "\n".join(
             [
-                f"👤 Account: {currentAccount.get('username')}",
+                f"👤 Account: Omega Blurz",
                 f"⭐️ Points earned today: {utils.formatNumber(accountPointsCounter - startingPoints)}",
                 f"💰 Total points: {utils.formatNumber(accountPointsCounter)}",
                 goalNotifier,
