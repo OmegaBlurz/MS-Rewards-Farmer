@@ -261,7 +261,7 @@ def desktopSearch(currentAccount, args, accountPointsCounter):
             f"[POINTS] You have {utils.formatNumber(startingPoints)} points on your account"
         )
         # todo Send notification if these fail to Apprise versus just logging
-        ReadToEarn(desktopBrowser).completeReadToEarn(startingPoints)
+        # ReadToEarn(desktopBrowser).completeReadToEarn(startingPoints) stopping this as I believe it may be causing the "Oops! Looks like you are on the go" blockage
         DailySet(desktopBrowser).completeDailySet()
         PunchCards(desktopBrowser).completePunchCards()
         MorePromotions(desktopBrowser).completeMorePromotions()
