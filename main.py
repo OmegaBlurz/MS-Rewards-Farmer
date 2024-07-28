@@ -203,9 +203,22 @@ def setupAccounts() -> list[Account]:
 
 
 class AppriseSummary(Enum):
-    always = auto()
-    on_error = auto()
-    never = auto()
+    """
+    configures how results are summarized via Apprise
+    """
+
+    ALWAYS = auto()
+    """
+    the default, as it was before, how many points were gained and goal percentage if set
+    """
+    ON_ERROR = auto()
+    """
+    only sends email if for some reason there's remaining searches 
+    """
+    NEVER = auto()
+    """
+    never send summary 
+    """
 
 
 def executeBot(currentAccount: Account, args: argparse.Namespace):
@@ -267,9 +280,9 @@ def executeBot(currentAccount: Account, args: argparse.Namespace):
         f"[POINTS] You are now at {Utils.formatNumber(accountPoints)} points !"
     )
     appriseSummary = AppriseSummary[
-        Utils.loadConfig().get("apprise", {}).get("summary", AppriseSummary.always.name)
+        Utils.loadConfig().get("apprise", {}).get("summary", AppriseSummary.ALWAYS.name)
     ]
-    if appriseSummary == AppriseSummary.always:
+    if appriseSummary == AppriseSummary.ALWAYS:
         goalStatus = ""
         if goalPoints > 0:
             logging.info(
@@ -292,13 +305,13 @@ def executeBot(currentAccount: Account, args: argparse.Namespace):
                 ]
             ),
         )
-    elif appriseSummary == AppriseSummary.on_error:
+    elif appriseSummary == AppriseSummary.ON_ERROR:
         if remainingSearches.getTotal() > 0:
             Utils.sendNotification(
                 "Error: remaining searches",
                 f"account username: {currentAccount.username}, {remainingSearches}",
             )
-    elif appriseSummary == AppriseSummary.never:
+    elif appriseSummary == AppriseSummary.NEVER:
         pass
 
     return accountPoints

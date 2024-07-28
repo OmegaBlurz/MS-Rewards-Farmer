@@ -23,19 +23,35 @@ LOAD_DATE_KEY = "loadDate"
 
 
 class RetriesStrategy(Enum):
-    exponential = auto()
-    constant = auto()
+    """
+    method to use when retrying
+    """
+
+    EXPONENTIAL = auto()
+    """
+    an exponentially increasing `base_delay_in_seconds` between attempts
+    """
+    CONSTANT = auto()
+    """
+    the default; a constant `base_delay_in_seconds` between attempts
+    """
 
 
 class Searches:
     config = Utils.loadConfig()
     maxRetries: Final[int] = config.get("retries", {}).get("max", 8)
+    """
+    the max amount of retries to attempt
+    """
     baseDelay: Final[float] = config.get("retries", {}).get(
         "base_delay_in_seconds", 14.0625
     )
+    """
+    how many seconds to delay
+    """
     # retriesStrategy = Final[  # todo Figure why doesn't work with equality below
     retriesStrategy = RetriesStrategy[
-        config.get("retries", {}).get("strategy", RetriesStrategy.constant.name)
+        config.get("retries", {}).get("strategy", RetriesStrategy.CONSTANT.name)
     ]
 
     def __init__(self, browser: Browser):
@@ -138,9 +154,9 @@ class Searches:
         for i in range(self.maxRetries + 1):
             if i != 0:
                 sleepTime: float
-                if Searches.retriesStrategy == Searches.retriesStrategy.exponential:
+                if Searches.retriesStrategy == Searches.retriesStrategy.EXPONENTIAL:
                     sleepTime = baseDelay * 2 ** (i - 1)
-                elif Searches.retriesStrategy == Searches.retriesStrategy.constant:
+                elif Searches.retriesStrategy == Searches.retriesStrategy.CONSTANT:
                     sleepTime = baseDelay
                 else:
                     raise AssertionError

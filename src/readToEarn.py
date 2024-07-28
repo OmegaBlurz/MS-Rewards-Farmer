@@ -7,6 +7,7 @@ from requests_oauthlib import OAuth2Session
 
 from src.browser import Browser
 from .activities import Activities
+from .utils import Utils
 
 client_id = '0000000040170455'
 authorization_base_url = 'https://login.live.com/oauth20_authorize.srf'
@@ -23,7 +24,7 @@ class ReadToEarn:
     def completeReadToEarn(self):
         
         logging.info("[READ TO EARN] " + "Trying to complete Read to Earn...")
-        
+
         accountName = self.browser.username
         
         # Should Really Cache Token and load it in.
@@ -37,8 +38,8 @@ class ReadToEarn:
         
         # Use Webdriver to get OAuth2 Token
         # This works, since you already logged into Bing, so no user interaction needed
-        
-        mobileApp = OAuth2Session(client_id, scope=scope, redirect_uri=redirect_uri)
+
+        mobileApp = Utils.makeRequestsSession(OAuth2Session(client_id, scope=scope, redirect_uri=redirect_uri))
         authorization_url, state = mobileApp.authorization_url(authorization_base_url, access_type="offline_access", login_hint=accountName)
         
         # Get Referer URL from webdriver
@@ -69,7 +70,7 @@ class ReadToEarn:
         r = mobileApp.post("https://prod.rewardsplatform.microsoft.com/dapi/me/activities",json=json_data)
         balance = r.json().get("response").get("balance")
         time.sleep(random.randint(10, 20))
-        
+
         # json data to confirm an article is read
         json_data = {
             'amount': 1,
