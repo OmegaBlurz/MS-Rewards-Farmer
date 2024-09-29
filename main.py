@@ -14,13 +14,12 @@ from enum import Enum, auto
 from src import (
     Browser,
     Login,
-    MorePromotions,
     PunchCards,
     Searches,
     ReadToEarn,
-    DailySet,
     Account,
 )
+from src.activities import Activities
 from src.browser import RemainingSearches
 from src.loggingColoredFormatter import ColoredFormatter
 from src.utils import Utils, CONFIG
@@ -40,8 +39,11 @@ def main():
             earned_points = executeBot(currentAccount, args)
         except Exception as e1:
             logging.error("", exc_info=True)
-            Utils.sendNotification(f"⚠️ Error executing {currentAccount.username}, please check the log",
-                                   traceback.format_exc(), e1)
+            Utils.sendNotification(
+                f"⚠️ Error executing {currentAccount.username}, please check the log",
+                traceback.format_exc(),
+                e1,
+            )
             continue
         previous_points = previous_points_data.get(currentAccount.username, 0)
 
@@ -236,10 +238,8 @@ def executeBot(currentAccount: Account, args: argparse.Namespace):
             logging.info(
                 f"[POINTS] You have {utils.formatNumber(startingPoints)} points on your account"
             )
-            # todo Combine these classes so main loop isn't duplicated
-            DailySet(desktopBrowser).completeDailySet()
+            Activities(desktopBrowser).completeActivities()
             PunchCards(desktopBrowser).completePunchCards()
-            MorePromotions(desktopBrowser).completeMorePromotions()
             # VersusGame(desktopBrowser).completeVersusGame()
 
             with Searches(desktopBrowser) as searches:
@@ -277,9 +277,7 @@ def executeBot(currentAccount: Account, args: argparse.Namespace):
     logging.info(
         f"[POINTS] You are now at {Utils.formatNumber(accountPoints)} points !"
     )
-    appriseSummary = AppriseSummary[
-        CONFIG.get("apprise").get("summary")
-    ]
+    appriseSummary = AppriseSummary[CONFIG.get("apprise").get("summary")]
     if appriseSummary == AppriseSummary.ALWAYS:
         goalStatus = ""
         if goalPoints > 0:

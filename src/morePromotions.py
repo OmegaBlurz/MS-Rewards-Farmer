@@ -5,6 +5,7 @@ import time
 
 from selenium.common import TimeoutException
 from selenium.webdriver.common.by import By
+from typing_extensions import deprecated
 
 from src.browser import Browser
 from .activities import Activities
@@ -34,6 +35,7 @@ PROMOTION_TITLE_TO_SEARCH = {
 }
 
 
+@deprecated("Use Activities")
 # todo Rename MoreActivities?
 class MorePromotions:
     def __init__(self, browser: Browser):
@@ -98,7 +100,7 @@ class MorePromotions:
                 # Reset tabs in case of an exception
                 self.browser.utils.resetTabs()
                 continue
-        if CONFIG.get("apprise").get("notify").get("incomplete-promotions"):
+        if CONFIG.get("apprise").get("notify").get("incomplete-activity"):
             incompletePromotions: list[tuple[str, str]] = []
             for promotion in self.browser.utils.getDashboardData()[
                 "morePromotions"

@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 import locale
 import logging
 import os
@@ -7,11 +8,14 @@ from pathlib import Path
 from types import TracebackType
 from typing import Any, Type
 
+import ipapi
 import pycountry
 import seleniumwire.undetected_chromedriver as webdriver
 import undetected_chromedriver
+from ipapi.exceptions import RateLimited
 from selenium.webdriver import ChromeOptions
 from selenium.webdriver.chrome.webdriver import WebDriver
+from selenium.webdriver.common.by import By
 
 from src import Account, RemainingSearches
 from src.userAgentGenerator import GenerateUserAgent
@@ -34,7 +38,7 @@ class Browser:
         self.username = account.username
         self.password = account.password
         self.totp = account.totp
-        self.localeLang, self.localeGeo = self.getCCodeLang(args.lang, args.geo)
+        self.localeLang, self.localeGeo = self.getLanguageCountry(args.lang, args.geo)
         self.proxy = None
         if args.proxy:
             self.proxy = args.proxy
@@ -59,10 +63,10 @@ class Browser:
         return self
 
     def __exit__(
-            self,
-            exc_type: Type[BaseException] | None,
-            exc_value: BaseException | None,
-            traceback: TracebackType | None,
+        self,
+        exc_type: Type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ):
         # Cleanup actions when exiting the browser context
         logging.debug(
@@ -80,7 +84,9 @@ class Browser:
         options.headless = self.headless
         options.add_argument(f"--lang={self.localeLang}")
         options.add_argument("--log-level=3")
-        options.add_argument("--blink-settings=imagesEnabled=false")      #If you are having MFA sign in issues comment this line out
+        options.add_argument(
+            "--blink-settings=imagesEnabled=false"
+        )  # If you are having MFA sign in issues comment this line out
         options.add_argument("--ignore-certificate-errors")
         options.add_argument("--ignore-certificate-errors-spki-list")
         options.add_argument("--ignore-ssl-errors")
@@ -95,7 +101,7 @@ class Browser:
         options.add_argument("--disable-features=Translate")
         options.add_argument("--disable-features=PrivacySandboxSettings4")
         options.add_argument("--disable-http2")
-        options.add_argument("--disable-search-engine-choice-screen") #153
+        options.add_argument("--disable-search-engine-choice-screen")  # 153
 
         seleniumwireOptions: dict[str, Any] = {"verify_ssl": False}
 
@@ -107,7 +113,7 @@ class Browser:
                 "no_proxy": "localhost,127.0.0.1",
             }
         driver = None
-        
+
         if os.environ.get("DOCKER"):
             driver = webdriver.Chrome(
                 options=options,
@@ -121,10 +127,10 @@ class Browser:
             major = int(version.split(".")[0])
 
             driver = webdriver.Chrome(
-                    options=options,
-                    seleniumwire_options=seleniumwireOptions,
-                    user_data_dir=self.userDataDir.as_posix(),
-                    version_main=major,
+                options=options,
+                seleniumwire_options=seleniumwireOptions,
+                user_data_dir=self.userDataDir.as_posix(),
+                version_main=major,
             )
 
         seleniumLogger = logging.getLogger("seleniumwire")
@@ -214,24 +220,42 @@ class Browser:
         return sessionsDir
 
     @staticmethod
-    def getCCodeLang(lang: str, geo: str) -> tuple:
-        currentLocale = locale.getlocale()
-        language, country = currentLocale[0].split("_")
+    def getLanguageCountry(language: str, country: str) -> tuple[str, str]:
+        if not country:
+            country = CONFIG.get("default").get("location")
 
-        if not lang:
-            language = pycountry.languages.get(name=language).alpha_2
-        else:
-            language = lang
+        if not language or not country:
+            currentLocale = locale.getlocale()
+            if not language:
+                with contextlib.suppress(ValueError):
+                    language = pycountry.languages.get(
+                        name=currentLocale[0].split("_")[0]
+                    ).alpha_2
+            if not country:
+                with contextlib.suppress(ValueError):
+                    country = pycountry.countries.get(
+                        name=currentLocale[0].split("_")[1]
+                    ).alpha_2
 
-        configCountry = CONFIG.get("default").get("location")
-        if not geo and not configCountry:
-            country = pycountry.countries.get(name=country).alpha_2
-        elif geo:
-            country = geo
-        elif configCountry:
-            country = configCountry
-        else:
-            raise AssertionError
+        if not language or not country:
+            try:
+                ipapiLocation = ipapi.location()
+                if not language:
+                    language = ipapiLocation["languages"].split(",")[0].split("-")[0]
+                if not country:
+                    country = ipapiLocation["country"]
+            except RateLimited:
+                logging.warning(exc_info=True)
+
+        if not language:
+            language = "en"
+            logging.warning(
+                f"Not able to figure language returning default: {language}"
+            )
+
+        if not country:
+            country = "US"
+            logging.warning(f"Not able to figure country returning default: {country}")
 
         return language, country
 
@@ -250,7 +274,7 @@ class Browser:
         return version
 
     def getRemainingSearches(
-            self, desktopAndMobile: bool = False
+        self, desktopAndMobile: bool = False
     ) -> RemainingSearches | int:
         bingInfo = self.utils.getBingInfo()
         searchPoints = 1
@@ -267,11 +291,15 @@ class Browser:
         pcPointsRemaining = pcSearch["pointProgressMax"] - pcSearch["pointProgress"]
         assert pcPointsRemaining % searchPoints == 0
         remainingDesktopSearches: int = int(pcPointsRemaining / searchPoints)
-        mobilePointsRemaining = mobileSearch["pointProgressMax"] - mobileSearch["pointProgress"]
+        mobilePointsRemaining = (
+            mobileSearch["pointProgressMax"] - mobileSearch["pointProgress"]
+        )
         assert mobilePointsRemaining % searchPoints == 0
         remainingMobileSearches: int = int(mobilePointsRemaining / searchPoints)
         if desktopAndMobile:
-            return RemainingSearches(desktop=remainingDesktopSearches, mobile=remainingMobileSearches)
+            return RemainingSearches(
+                desktop=remainingDesktopSearches, mobile=remainingMobileSearches
+            )
         if self.mobile:
             return remainingMobileSearches
         return remainingDesktopSearches

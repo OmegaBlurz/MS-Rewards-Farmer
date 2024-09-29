@@ -1,8 +1,11 @@
 # config.yaml
 apprise:
   notify:
-    incomplete-promotions: True # True or False
-    uncaught-exceptions: True # True or False
+    incomplete-activity:
+      enabled: True # True or False
+      ignore-safeguard-info: True
+    uncaught-exception:
+      enabled: True # True or False
   summary: ALWAYS
 default:
   geolocation: GB # Replace with your country code https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
